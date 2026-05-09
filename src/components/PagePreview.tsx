@@ -1,15 +1,15 @@
 import { Document, Page } from 'react-pdf';
 
 interface PagePreviewProps {
-  file: File;
+  url: string;
   pageNumber: number;
 }
 
-export default function PagePreview({ file, pageNumber }: PagePreviewProps) {
+export default function PagePreview({ url, pageNumber }: PagePreviewProps) {
   return (
     <div className="page-preview">
       <Document
-        file={file}
+        file={url}
         loading={<div className="page-preview__loading">Loading…</div>}
         error={<div className="page-preview__error">Failed to load PDF.</div>}
       >

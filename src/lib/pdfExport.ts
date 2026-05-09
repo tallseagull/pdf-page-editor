@@ -1,16 +1,31 @@
 import { PDFDocument } from 'pdf-lib';
+import type { PdfPage, PdfSource } from '../types.ts';
+
+export async function getPdfPageCount(file: File): Promise<number> {
+  const buf = await file.arrayBuffer();
+  const doc = await PDFDocument.load(buf);
+  return doc.getPageCount();
+}
 
 export async function exportFilteredPdf(
-  originalFile: File,
-  pageNumbers: number[],
+  sources: PdfSource[],
+  pages: PdfPage[],
 ): Promise<Uint8Array> {
-  const arrayBuffer = await originalFile.arrayBuffer();
-  const srcDoc = await PDFDocument.load(arrayBuffer);
   const newDoc = await PDFDocument.create();
+  const loadedDocs = new Map<string, PDFDocument>();
 
-  const zeroBasedIndices = pageNumbers.map((n) => n - 1);
-  const copiedPages = await newDoc.copyPages(srcDoc, zeroBasedIndices);
-  copiedPages.forEach((page) => newDoc.addPage(page));
+  for (const page of pages) {
+    if (!loadedDocs.has(page.sourceId)) {
+      const src = sources.find((s) => s.id === page.sourceId);
+      if (!src) continue;
+      const buf = await src.file.arrayBuffer();
+      loadedDocs.set(page.sourceId, await PDFDocument.load(buf));
+    }
+    const srcDoc = loadedDocs.get(page.sourceId);
+    if (!srcDoc) continue;
+    const [copied] = await newDoc.copyPages(srcDoc, [page.pageNumber - 1]);
+    newDoc.addPage(copied);
+  }
 
   return newDoc.save();
 }

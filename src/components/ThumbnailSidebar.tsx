@@ -1,34 +1,30 @@
 import { Document, Page } from 'react-pdf';
+import type { PdfPage, PdfSource } from '../types.ts';
 
 interface ThumbnailSidebarProps {
-  file: File;
-  remainingPages: number[];
+  sources: Map<string, PdfSource>;
+  pages: PdfPage[];
   selectedIdx: number;
   onSelect: (idx: number) => void;
   onDelete: (idx: number) => void;
-  onDocumentLoadSuccess: (info: { numPages: number }) => void;
 }
 
 export default function ThumbnailSidebar({
-  file,
-  remainingPages,
+  sources,
+  pages,
   selectedIdx,
   onSelect,
   onDelete,
-  onDocumentLoadSuccess,
 }: ThumbnailSidebarProps) {
   return (
     <aside className="sidebar">
-      <Document
-        file={file}
-        onLoadSuccess={onDocumentLoadSuccess}
-        loading={<div className="sidebar__loading">Loading…</div>}
-        error={<div className="sidebar__error">Failed to load PDF.</div>}
-      >
-        <ul className="sidebar__list" role="list">
-          {remainingPages.map((pageNumber, idx) => (
+      <ul className="sidebar__list" role="list">
+        {pages.map((page, idx) => {
+          const source = sources.get(page.sourceId);
+          if (!source) return null;
+          return (
             <li
-              key={pageNumber}
+              key={`${page.sourceId}-${page.pageNumber}-${idx}`}
               className={`sidebar__item${idx === selectedIdx ? ' sidebar__item--selected' : ''}`}
               onClick={() => onSelect(idx)}
               role="button"
@@ -36,19 +32,25 @@ export default function ThumbnailSidebar({
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') onSelect(idx);
               }}
-              aria-label={`Page ${pageNumber}`}
+              aria-label={`Page ${page.pageNumber}`}
               aria-pressed={idx === selectedIdx}
             >
               <div className="sidebar__thumb">
-                <Page
-                  pageNumber={pageNumber}
-                  width={140}
-                  renderTextLayer={false}
-                  renderAnnotationLayer={false}
+                <Document
+                  file={source.url}
                   loading={<div className="sidebar__thumb-loading" />}
-                />
+                  error={<div className="sidebar__thumb-loading" />}
+                >
+                  <Page
+                    pageNumber={page.pageNumber}
+                    width={140}
+                    renderTextLayer={false}
+                    renderAnnotationLayer={false}
+                    loading={<div className="sidebar__thumb-loading" />}
+                  />
+                </Document>
               </div>
-              <span className="sidebar__page-num">{pageNumber}</span>
+              <span className="sidebar__page-num">{page.pageNumber}</span>
               <button
                 type="button"
                 className="sidebar__delete-btn"
@@ -56,15 +58,15 @@ export default function ThumbnailSidebar({
                   e.stopPropagation();
                   onDelete(idx);
                 }}
-                aria-label={`Delete page ${pageNumber}`}
+                aria-label={`Delete page ${page.pageNumber}`}
                 title="Delete page"
               >
                 ✕
               </button>
             </li>
-          ))}
-        </ul>
-      </Document>
+          );
+        })}
+      </ul>
     </aside>
   );
 }

@@ -1,7 +1,11 @@
-export interface PdfState {
+export interface PdfSource {
+  id: string;
   file: File;
-  fileName: string;
+  url: string;
   pageCount: number;
-  remainingPages: number[];
-  selectedIdx: number;
+}
+
+export interface PdfPage {
+  sourceId: string;
+  pageNumber: number;
 }

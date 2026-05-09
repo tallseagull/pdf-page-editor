@@ -142,6 +142,12 @@
   flex-shrink: 0;
 }
 
+.uploader--disabled {
+  cursor: default;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
 .uploader__input {
   display: none;
 }
@@ -150,9 +156,6 @@
   display: inline-flex;
   align-items: center;
   padding: 6px 14px;
-  background: #3a3a3a;
-  color: #e0e0e0;
-  border: 1px solid #555;
   border-radius: 6px;
   font-size: 13px;
   font-weight: 500;
@@ -160,9 +163,56 @@
   white-space: nowrap;
 }
 
-.uploader:hover .uploader__btn {
+.uploader__btn--primary {
+  background: #3a3a3a;
+  color: #e0e0e0;
+  border: 1px solid #555;
+}
+
+.uploader:hover .uploader__btn--primary {
   background: #484848;
   border-color: #777;
+}
+
+.uploader__btn--secondary {
+  background: transparent;
+  color: #ccc;
+  border: 1px solid #555;
+}
+
+.uploader:hover .uploader__btn--secondary {
+  background: #333;
+  border-color: #777;
+}
+
+/* ── Loading indicator ─────────────────────────────────────────── */
+.app__loading {
+  font-size: 13px;
+  color: #888;
+}
+
+/* ── Clear button ──────────────────────────────────────────────── */
+.app__clear-btn {
+  padding: 6px 14px;
+  background: transparent;
+  color: #ccc;
+  border: 1px solid #555;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.app__clear-btn:hover:not(:disabled) {
+  background: #8b1a1a;
+  border-color: #c0392b;
+  color: #fff;
+}
+
+.app__clear-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 
 /* ── Sidebar ───────────────────────────────────────────────────── */

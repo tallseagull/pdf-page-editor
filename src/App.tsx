@@ -1,99 +1,186 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import './App.css';
 import PagePreview from './components/PagePreview.tsx';
 import PdfUploader from './components/PdfUploader.tsx';
 import ThumbnailSidebar from './components/ThumbnailSidebar.tsx';
-import { exportFilteredPdf } from './lib/pdfExport.ts';
+import { exportFilteredPdf, getPdfPageCount } from './lib/pdfExport.ts';
+import type { PdfPage, PdfSource } from './types.ts';
 
 export default function App() {
-  const [pdfFile, setPdfFile] = useState<File | null>(null);
-  const [pageCount, setPageCount] = useState(0);
-  const [remainingPages, setRemainingPages] = useState<number[]>([]);
+  const [sources, setSources] = useState<PdfSource[]>([]);
+  const [pages, setPages] = useState<PdfPage[]>([]);
   const [selectedIdx, setSelectedIdx] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleFileLoad = useCallback((file: File) => {
-    setPdfFile(file);
-    setPageCount(0);
-    setRemainingPages([]);
+  const hasContent = sources.length > 0;
+
+  const totalOriginal = useMemo(
+    () => sources.reduce((sum, s) => sum + s.pageCount, 0),
+    [sources],
+  );
+
+  const sourceMap = useMemo(
+    () => new Map(sources.map((s) => [s.id, s])),
+    [sources],
+  );
+
+  const handleOpenPdf = useCallback(async (file: File) => {
+    setIsLoading(true);
+    setError(null);
+    setSources((prev) => {
+      prev.forEach((s) => URL.revokeObjectURL(s.url));
+      return [];
+    });
+    setPages([]);
     setSelectedIdx(0);
-    setSaveError(null);
+    try {
+      const pageCount = await getPdfPageCount(file);
+      const id = crypto.randomUUID();
+      const url = URL.createObjectURL(file);
+      const source: PdfSource = { id, file, url, pageCount };
+      setSources([source]);
+      setPages(
+        Array.from({ length: pageCount }, (_, i) => ({
+          sourceId: id,
+          pageNumber: i + 1,
+        })),
+      );
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load PDF.');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
-  const handleDocumentLoadSuccess = useCallback(
-    ({ numPages }: { numPages: number }) => {
-      setPageCount(numPages);
-      setRemainingPages(Array.from({ length: numPages }, (_, i) => i + 1));
-      setSelectedIdx(0);
-    },
-    [],
-  );
+  const handleAddPdf = useCallback(async (file: File) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const pageCount = await getPdfPageCount(file);
+      const id = crypto.randomUUID();
+      const url = URL.createObjectURL(file);
+      const source: PdfSource = { id, file, url, pageCount };
+      setSources((prev) => [...prev, source]);
+      setPages((prev) => [
+        ...prev,
+        ...Array.from({ length: pageCount }, (_, i) => ({
+          sourceId: id,
+          pageNumber: i + 1,
+        })),
+      ]);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to load PDF.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
-  const handleDeletePage = useCallback(
-    (idxToDelete: number) => {
-      setRemainingPages((prev) => {
-        const next = prev.filter((_, i) => i !== idxToDelete);
-        setSelectedIdx((sel) => {
-          if (next.length === 0) return 0;
-          if (idxToDelete < sel) return sel - 1;
-          if (idxToDelete === sel)
-            return Math.min(sel, next.length - 1);
-          return sel;
-        });
-        return next;
+  const handleClear = useCallback(() => {
+    setSources((prev) => {
+      prev.forEach((s) => URL.revokeObjectURL(s.url));
+      return [];
+    });
+    setPages([]);
+    setSelectedIdx(0);
+    setError(null);
+  }, []);
+
+  const handleDeletePage = useCallback((idxToDelete: number) => {
+    setPages((prev) => {
+      const next = prev.filter((_, i) => i !== idxToDelete);
+      setSelectedIdx((sel) => {
+        if (next.length === 0) return 0;
+        if (idxToDelete < sel) return sel - 1;
+        if (idxToDelete === sel) return Math.min(sel, next.length - 1);
+        return sel;
       });
-    },
-    [],
-  );
+      return next;
+    });
+  }, []);
 
   const handleSaveAsPdf = useCallback(async () => {
-    if (!pdfFile || remainingPages.length === 0) return;
+    if (pages.length === 0) return;
     setIsSaving(true);
-    setSaveError(null);
+    setError(null);
     try {
-      const bytes = await exportFilteredPdf(pdfFile, remainingPages);
-      const blob = new Blob([bytes.buffer as ArrayBuffer], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
+      const bytes = await exportFilteredPdf(sources, pages);
+      const blob = new Blob([bytes.buffer as ArrayBuffer], {
+        type: 'application/pdf',
+      });
+      const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `edited-${pdfFile.name}`;
+      a.href = blobUrl;
+      a.download = `edited-${sources[0]?.file.name ?? 'document.pdf'}`;
       document.body.appendChild(a);
       a.click();
       a.remove();
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(blobUrl);
     } catch (e) {
-      setSaveError(e instanceof Error ? e.message : 'Failed to save PDF.');
+      setError(e instanceof Error ? e.message : 'Failed to save PDF.');
     } finally {
       setIsSaving(false);
     }
-  }, [pdfFile, remainingPages]);
+  }, [sources, pages]);
 
-  const selectedPageNumber =
-    remainingPages.length > 0 ? remainingPages[selectedIdx] : null;
+  const selectedPage = pages[selectedIdx] ?? null;
+  const selectedSource = selectedPage
+    ? sourceMap.get(selectedPage.sourceId)
+    : null;
+
+  const fileLabel =
+    sources.length === 1
+      ? sources[0].file.name
+      : `${sources.length} files`;
 
   return (
     <div className="app">
       <header className="app__toolbar">
         <div className="app__toolbar-left">
-          <PdfUploader onFileLoad={handleFileLoad} />
-          {pdfFile && (
-            <span className="app__filename" title={pdfFile.name}>
-              {pdfFile.name}
+          <PdfUploader
+            onFileLoad={handleOpenPdf}
+            label="Open PDF"
+            disabled={isLoading}
+          />
+          {hasContent && (
+            <PdfUploader
+              onFileLoad={handleAddPdf}
+              label="Add PDF"
+              variant="secondary"
+              disabled={isLoading}
+            />
+          )}
+          {hasContent && (
+            <span className="app__filename" title={fileLabel}>
+              {fileLabel}
+            </span>
+          )}
+          {isLoading && (
+            <span className="app__loading" aria-live="polite">
+              Loading…
             </span>
           )}
         </div>
 
-        {pdfFile && pageCount > 0 && (
+        {hasContent && (
           <div className="app__toolbar-right">
             <span className="app__page-count">
-              {remainingPages.length} / {pageCount} pages
+              {pages.length} / {totalOriginal} pages
             </span>
+            <button
+              type="button"
+              className="app__clear-btn"
+              onClick={handleClear}
+              disabled={isLoading || isSaving}
+            >
+              Clear
+            </button>
             <button
               type="button"
               className="app__save-btn"
               onClick={() => void handleSaveAsPdf()}
-              disabled={isSaving || remainingPages.length === 0}
+              disabled={isSaving || pages.length === 0}
             >
               {isSaving ? 'Saving…' : 'Save as PDF'}
             </button>
@@ -101,25 +188,27 @@ export default function App() {
         )}
       </header>
 
-      {saveError && (
+      {error && (
         <div className="app__error" role="alert">
-          {saveError}
+          {error}
         </div>
       )}
 
-      {pdfFile ? (
+      {hasContent ? (
         <div className="app__viewer">
           <ThumbnailSidebar
-            file={pdfFile}
-            remainingPages={remainingPages}
+            sources={sourceMap}
+            pages={pages}
             selectedIdx={selectedIdx}
             onSelect={setSelectedIdx}
             onDelete={handleDeletePage}
-            onDocumentLoadSuccess={handleDocumentLoadSuccess}
           />
           <main className="app__main">
-            {selectedPageNumber !== null ? (
-              <PagePreview file={pdfFile} pageNumber={selectedPageNumber} />
+            {selectedPage && selectedSource ? (
+              <PagePreview
+                url={selectedSource.url}
+                pageNumber={selectedPage.pageNumber}
+              />
             ) : (
               <div className="app__empty-state">All pages deleted.</div>
             )}
