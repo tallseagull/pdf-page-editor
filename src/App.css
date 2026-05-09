@@ -356,3 +356,160 @@
   color: #888;
   padding: 40px;
 }
+
+/* ── View toggle ───────────────────────────────────────────────── */
+.view-toggle {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: #1e1e1e;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.view-toggle__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: #888;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.view-toggle__btn:hover {
+  background: #3a3a3a;
+  color: #ccc;
+}
+
+.view-toggle__btn--active {
+  background: #0a84ff;
+  color: #fff;
+}
+
+.view-toggle__btn--active:hover {
+  background: #0070e0;
+  color: #fff;
+}
+
+/* ── Thumbnail grid view ───────────────────────────────────────── */
+.thumb-grid {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 20px;
+  padding: 28px;
+  background: #2a2a2a;
+}
+
+.grid-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 196px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  padding: 8px 8px 6px;
+  cursor: grab;
+  background: #333;
+  transition: background 0.12s, border-color 0.12s;
+  user-select: none;
+}
+
+.grid-item:active {
+  cursor: grabbing;
+}
+
+.grid-item:hover {
+  background: #3c3c3c;
+}
+
+.grid-item--selected {
+  border-color: #0a84ff;
+  background: #1a2d45;
+}
+
+.grid-item--selected:hover {
+  background: #1e3454;
+}
+
+.grid-item--dragging {
+  cursor: grabbing;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.grid-item__thumb {
+  width: 100%;
+  background: #fff;
+  border-radius: 2px;
+  overflow: hidden;
+  line-height: 0;
+  pointer-events: none;
+}
+
+.grid-item__thumb canvas {
+  width: 100% !important;
+  height: auto !important;
+  display: block;
+}
+
+.grid-item__loading {
+  width: 180px;
+  height: 234px;
+  background: #555;
+  border-radius: 2px;
+}
+
+.grid-item__label {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 6px;
+  letter-spacing: 0.02em;
+}
+
+.grid-item--selected .grid-item__label {
+  color: #7ab8ff;
+}
+
+.grid-item__source-hint {
+  color: #777;
+}
+
+.grid-item__delete {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 20, 20, 0.85);
+  border: 1px solid #555;
+  border-radius: 50%;
+  color: #ccc;
+  font-size: 10px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  padding: 0;
+  line-height: 1;
+}
+
+.grid-item:hover .grid-item__delete {
+  opacity: 1;
+}
+
+.grid-item__delete:hover {
+  background: #c0392b;
+  border-color: #e74c3c;
+  color: #fff;
+}
+

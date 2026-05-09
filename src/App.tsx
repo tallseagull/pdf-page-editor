@@ -2,14 +2,25 @@ import { useCallback, useMemo, useState } from 'react';
 import './App.css';
 import PagePreview from './components/PagePreview.tsx';
 import PdfUploader from './components/PdfUploader.tsx';
+import ThumbnailGrid from './components/ThumbnailGrid.tsx';
 import ThumbnailSidebar from './components/ThumbnailSidebar.tsx';
+import ViewToggle from './components/ViewToggle.tsx';
 import { exportFilteredPdf, getPdfPageCount } from './lib/pdfExport.ts';
-import type { PdfPage, PdfSource } from './types.ts';
+import type { PdfPage, PdfSource, ViewMode } from './types.ts';
+
+function makePagesForSource(sourceId: string, pageCount: number): PdfPage[] {
+  return Array.from({ length: pageCount }, (_, i) => ({
+    instanceId: crypto.randomUUID(),
+    sourceId,
+    pageNumber: i + 1,
+  }));
+}
 
 export default function App() {
   const [sources, setSources] = useState<PdfSource[]>([]);
   const [pages, setPages] = useState<PdfPage[]>([]);
   const [selectedIdx, setSelectedIdx] = useState(0);
+  const [viewMode, setViewMode] = useState<ViewMode>('slide');
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,14 +50,8 @@ export default function App() {
       const pageCount = await getPdfPageCount(file);
       const id = crypto.randomUUID();
       const url = URL.createObjectURL(file);
-      const source: PdfSource = { id, file, url, pageCount };
-      setSources([source]);
-      setPages(
-        Array.from({ length: pageCount }, (_, i) => ({
-          sourceId: id,
-          pageNumber: i + 1,
-        })),
-      );
+      setSources([{ id, file, url, pageCount }]);
+      setPages(makePagesForSource(id, pageCount));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load PDF.');
     } finally {
@@ -61,15 +66,8 @@ export default function App() {
       const pageCount = await getPdfPageCount(file);
       const id = crypto.randomUUID();
       const url = URL.createObjectURL(file);
-      const source: PdfSource = { id, file, url, pageCount };
-      setSources((prev) => [...prev, source]);
-      setPages((prev) => [
-        ...prev,
-        ...Array.from({ length: pageCount }, (_, i) => ({
-          sourceId: id,
-          pageNumber: i + 1,
-        })),
-      ]);
+      setSources((prev) => [...prev, { id, file, url, pageCount }]);
+      setPages((prev) => [...prev, ...makePagesForSource(id, pageCount)]);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to load PDF.');
     } finally {
@@ -99,6 +97,22 @@ export default function App() {
       return next;
     });
   }, []);
+
+  const handleReorder = useCallback(
+    (newPages: PdfPage[]) => {
+      setPages((prevPages) => {
+        const selectedInstanceId = prevPages[selectedIdx]?.instanceId;
+        if (selectedInstanceId) {
+          const newIdx = newPages.findIndex(
+            (p) => p.instanceId === selectedInstanceId,
+          );
+          setSelectedIdx(newIdx !== -1 ? newIdx : 0);
+        }
+        return newPages;
+      });
+    },
+    [selectedIdx],
+  );
 
   const handleSaveAsPdf = useCallback(async () => {
     if (pages.length === 0) return;
@@ -130,9 +144,7 @@ export default function App() {
     : null;
 
   const fileLabel =
-    sources.length === 1
-      ? sources[0].file.name
-      : `${sources.length} files`;
+    sources.length === 1 ? sources[0].file.name : `${sources.length} files`;
 
   return (
     <div className="app">
@@ -165,6 +177,7 @@ export default function App() {
 
         {hasContent && (
           <div className="app__toolbar-right">
+            <ViewToggle mode={viewMode} onChange={setViewMode} />
             <span className="app__page-count">
               {pages.length} / {totalOriginal} pages
             </span>
@@ -195,25 +208,36 @@ export default function App() {
       )}
 
       {hasContent ? (
-        <div className="app__viewer">
-          <ThumbnailSidebar
+        viewMode === 'slide' ? (
+          <div className="app__viewer">
+            <ThumbnailSidebar
+              sources={sourceMap}
+              pages={pages}
+              selectedIdx={selectedIdx}
+              onSelect={setSelectedIdx}
+              onDelete={handleDeletePage}
+            />
+            <main className="app__main">
+              {selectedPage && selectedSource ? (
+                <PagePreview
+                  url={selectedSource.url}
+                  pageNumber={selectedPage.pageNumber}
+                />
+              ) : (
+                <div className="app__empty-state">All pages deleted.</div>
+              )}
+            </main>
+          </div>
+        ) : (
+          <ThumbnailGrid
             sources={sourceMap}
             pages={pages}
             selectedIdx={selectedIdx}
             onSelect={setSelectedIdx}
             onDelete={handleDeletePage}
+            onReorder={handleReorder}
           />
-          <main className="app__main">
-            {selectedPage && selectedSource ? (
-              <PagePreview
-                url={selectedSource.url}
-                pageNumber={selectedPage.pageNumber}
-              />
-            ) : (
-              <div className="app__empty-state">All pages deleted.</div>
-            )}
-          </main>
-        </div>
+        )
       ) : (
         <div className="app__welcome">
           <div className="app__welcome-content">

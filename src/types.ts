@@ -6,6 +6,9 @@ export interface PdfSource {
 }
 
 export interface PdfPage {
+  instanceId: string;
   sourceId: string;
   pageNumber: number;
 }
+
+export type ViewMode = 'slide' | 'thumbnail';
