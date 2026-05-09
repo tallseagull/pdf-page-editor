@@ -1,0 +1,308 @@
+/* ── App shell ─────────────────────────────────────────────────── */
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: #1e1e1e;
+}
+
+/* ── Toolbar ───────────────────────────────────────────────────── */
+.app__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  height: 48px;
+  background: #2c2c2c;
+  border-bottom: 1px solid #3a3a3a;
+  flex-shrink: 0;
+  gap: 12px;
+}
+
+.app__toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.app__toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.app__filename {
+  font-size: 13px;
+  color: #aaa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px;
+}
+
+.app__page-count {
+  font-size: 13px;
+  color: #aaa;
+}
+
+.app__save-btn {
+  padding: 6px 16px;
+  background: #0a84ff;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.app__save-btn:hover:not(:disabled) {
+  background: #0070e0;
+}
+
+.app__save-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ── Error banner ──────────────────────────────────────────────── */
+.app__error {
+  padding: 8px 16px;
+  background: #5c1a1a;
+  color: #ffb3b3;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+/* ── Viewer layout ─────────────────────────────────────────────── */
+.app__viewer {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── Main content area ─────────────────────────────────────────── */
+.app__main {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 24px;
+  background: #3a3a3a;
+}
+
+.app__empty-state {
+  margin-top: 80px;
+  color: #888;
+  font-size: 15px;
+}
+
+/* ── Welcome screen ────────────────────────────────────────────── */
+.app__welcome {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app__welcome-content {
+  text-align: center;
+  color: #888;
+  max-width: 320px;
+}
+
+.app__welcome-icon {
+  width: 72px;
+  height: 72px;
+  color: #555;
+  margin-bottom: 20px;
+}
+
+.app__welcome-content h2 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ccc;
+  margin-bottom: 10px;
+}
+
+.app__welcome-content p {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* ── File uploader ─────────────────────────────────────────────── */
+.uploader {
+  display: inline-flex;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.uploader__input {
+  display: none;
+}
+
+.uploader__btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  background: #3a3a3a;
+  color: #e0e0e0;
+  border: 1px solid #555;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.uploader:hover .uploader__btn {
+  background: #484848;
+  border-color: #777;
+}
+
+/* ── Sidebar ───────────────────────────────────────────────────── */
+.sidebar {
+  width: 180px;
+  flex-shrink: 0;
+  background: #252525;
+  border-right: 1px solid #3a3a3a;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px 0;
+}
+
+.sidebar__loading,
+.sidebar__error {
+  padding: 16px 12px;
+  font-size: 12px;
+  color: #888;
+}
+
+.sidebar__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.sidebar__item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 8px 8px;
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  margin: 4px 6px;
+  transition: background 0.1s, border-color 0.1s;
+}
+
+.sidebar__item:hover {
+  background: #333;
+}
+
+.sidebar__item--selected {
+  border-color: #0a84ff;
+  background: #1a2d45;
+}
+
+.sidebar__item--selected:hover {
+  background: #1e3454;
+}
+
+.sidebar__thumb {
+  pointer-events: none;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  background: #fff;
+  border-radius: 2px;
+  overflow: hidden;
+  line-height: 0;
+}
+
+/* react-pdf canvas inside the thumbnail */
+.sidebar__thumb canvas {
+  width: 100% !important;
+  height: auto !important;
+  display: block;
+}
+
+.sidebar__thumb-loading {
+  width: 140px;
+  height: 180px;
+  background: #555;
+  border-radius: 2px;
+}
+
+.sidebar__page-num {
+  font-size: 11px;
+  color: #999;
+  margin-top: 5px;
+  letter-spacing: 0.02em;
+}
+
+.sidebar__item--selected .sidebar__page-num {
+  color: #7ab8ff;
+}
+
+/* delete button — hidden until hover */
+.sidebar__delete-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(30, 30, 30, 0.85);
+  border: 1px solid #555;
+  border-radius: 50%;
+  color: #ccc;
+  font-size: 10px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  padding: 0;
+  line-height: 1;
+}
+
+.sidebar__item:hover .sidebar__delete-btn {
+  opacity: 1;
+}
+
+.sidebar__delete-btn:hover {
+  background: #c0392b;
+  border-color: #e74c3c;
+  color: #fff;
+}
+
+/* ── Page preview ──────────────────────────────────────────────── */
+.page-preview {
+  display: flex;
+  justify-content: center;
+}
+
+.page-preview .react-pdf__Document {
+  display: flex;
+  justify-content: center;
+}
+
+.page-preview canvas {
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  border-radius: 2px;
+}
+
+.page-preview__loading,
+.page-preview__error {
+  font-size: 14px;
+  color: #888;
+  padding: 40px;
+}
